@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "id": "examplemod",
+  "version": "${version}",
+  "name": "ExampleMod",
+  "description": "Description for ExampleMod",
+  "authors": [
+    "null2264"
+  ],
+  "contact": {
+    "homepage": "https://example.org/",
+    "sources": "https://example.org/",
+    "issues": "https://example.org/"
+  },
+  "license": "0bsd",
+  "icon": "icon.png",
+  "environment": "*",
+  "entrypoints": {},
+  "mixins": [
+    "examplemod.mixins.json"
+  ],
+  "custom": {
+    "modmenu": {
+      "links": {
+        "modmenu.discord": "https://discord.gg/<invite-code>"
+      }
+    }
+  },
+  "depends": {
+    "fabricloader": "*",
+    "minecraft": "${mcversion}"
+  }
+}

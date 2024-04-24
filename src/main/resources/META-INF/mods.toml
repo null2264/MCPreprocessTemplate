@@ -1,0 +1,30 @@
+modLoader = "javafml"
+loaderVersion = "[1,)"
+license = "0bsd"
+issueTrackerURL = "https://example.org/"
+
+[[mods]]
+modId = "examplemod"
+version = "${version}"
+displayName = "ExampleMod"
+displayURL = "https://example.org/"
+logoFile = "icon.png"
+authors = "null2264"
+description = "Description for ExampleMod"
+
+[[mixins]]
+config = "examplemod.mixins.json"
+
+[[dependencies.libreexpfix]]
+modId = "${forge}"
+mandatory = true
+versionRange = "[1,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.libreexpfix]]
+modId = "minecraft"
+mandatory = true
+versionRange = "${mcversion}"
+ordering = "NONE"
+side = "BOTH"

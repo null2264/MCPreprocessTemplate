@@ -1,0 +1,210 @@
+plugins {
+    id("dev.architectury.loom") version "1.6-SNAPSHOT"
+    id("com.github.johnrengelman.shadow")
+    id("io.github.null2264.preprocess")
+    id("me.modmuss50.mod-publish-plugin") version "0.3.5"
+}
+
+def _env = System.getenv()
+
+archivesBaseName = project.archives_base_name
+
+def isForge = project.name.endsWith("forge")
+def isNeo = project.name.endsWith("neoforge")
+def isLex = isForge && !isNeo
+def isFabric = project.name.endsWith("fabric")
+
+def mcVersion
+def (major, minor, patch) = project.name.tokenize('-')[0].tokenize('.')
+mcVersion = "${major}${minor.padLeft(2, '0')}${(patch ?: '').padLeft(2, '0')}" as int
+static String stringifyVersion(int ver) {
+    return "${(int)(ver/10000)}.${(int)(ver/100)%100}" + (ver%100==0 ? '' : ".${ver%100}")
+}
+def mcVersionStr = stringifyVersion(mcVersion)
+// TODO(addingVersion):
+//  Min value must include '-' suffix to support snapshots
+def supportedVersionRange = [
+        12002: ["1.20.2-", "1.20.4"],
+        12005: ["1.20.5-", null]
+][mcVersion]
+
+def buildNumber = _env["GITHUB_RUN_NUMBER"]
+version = project.mod_version + "+${mcVersionStr}" + (buildNumber != null ? "b${buildNumber}" : "") + "-BETA" + (isFabric ? "-fabric" : (isNeo ? "-neoforge" : "-forge"))
+group = project.maven_group
+
+repositories {
+    maven { url = "https://maven.neoforged.net/releases" }
+}
+
+preprocess {
+    vars.put("MC", mcVersion)
+    vars.put("FABRIC", isFabric ? 1 : 0)
+    vars.put("FORGE", isForge ? 1 + (isNeo ? 1 : 0) : 0)
+}
+
+loom {
+    silentMojangMappingsLicense()
+
+    runConfigs.configure {
+        client {
+            runDir = "../../run/client"
+            ideConfigGenerated = true
+        }
+        server {
+            runDir = "../../run/server"
+            ideConfigGenerated = true
+        }
+    }
+
+    if (isLex)
+        forge {
+            mixinConfigs = [project.archives_base_name + ".mixins.json"]
+        }
+}
+
+configurations {
+    shade
+    modImplementation.extendsFrom(shade)
+}
+
+dependencies {
+    // TODO(addingVersion):
+    //  In case version target doesn't match the actual MC version, such as
+    //  snapshot versions
+    def mc = [
+    ]
+    minecraft("com.mojang:minecraft:${mc[mcVersion] ?: mcVersionStr}")
+    mappings loom.officialMojangMappings()
+    if (isFabric)
+        modImplementation("net.fabricmc:fabric-loader:0.15.10")
+    else {
+        // TODO(addingVersion)
+        if (!isNeo) {
+            forge("net.minecraftforge:forge:" + [
+                    12002: "1.20.2-48.0.13",
+            ][mcVersion])
+        } else {
+            neoForge("net.neoforged:neoforge:" + [
+                    12002: "20.2.51-beta",
+                    12005: "20.5.0-beta",
+            ][mcVersion])
+        }
+    }
+}
+
+shadowJar {
+    zip64 true
+    exclude(isFabric ? "META-INF/mods.toml" : "fabric.mod.json")
+    exclude("architectury.common.json")
+
+    configurations = [project.configurations.shade]
+    archiveClassifier.set("dev-shade")
+}
+
+artifacts {
+    archives(shadowJar)
+}
+
+remapJar {
+    dependsOn(shadowJar)
+    inputFile.set(shadowJar.archiveFile)
+}
+
+tasks.processResources {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+
+    def metadataVersion = project.mod_version + (buildNumber != null ? "b${buildNumber}" : "") + "-BETA"
+    def metadataMCVersion =
+            supportedVersionRange[0] != null ? (
+                    (isFabric ? ">=" : "[") +
+                            supportedVersionRange[0] +
+                            (supportedVersionRange[1] == null
+                                    ? (isFabric ? "" : ",)")
+                                    : ((isFabric ? " <=" : ",") + supportedVersionRange[1] + (isFabric ? "" : "]")))
+            ) : (isFabric ? supportedVersionRange[1] : "[${supportedVersionRange[1]}]")
+    inputs.property "version", metadataVersion
+    inputs.property "mcversion", metadataMCVersion
+    filteringCharset "UTF-8"
+
+    filesMatching(isFabric ? "fabric.mod.json" : "META-INF/mods.toml") {
+        expand "version": metadataVersion, "mcversion": metadataMCVersion, "forge": (isNeo ? "neoforge" : "forge")
+    }
+}
+
+def targetJavaVersion = (mcVersion >= 12005) ? 21 : (mcVersion >= 11700 ? 17 : 8)
+tasks.withType(JavaCompile).configureEach {
+    it.options.encoding = "UTF-8"
+    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
+        it.options.release = targetJavaVersion
+    }
+}
+
+java {
+    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
+    if (JavaVersion.current() != javaVersion) {
+        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
+    }
+    withSourcesJar()
+}
+
+jar {
+    from("LICENSE") {
+        rename { "${it}_${project["archivesBaseName"]}" }
+    }
+}
+
+// TODO(addingVersion)
+def mcReleaseVersions = [
+        11800: ["1.18", "1.18.1", "1.18.2", "1.19", "1.19.1", "1.19.2", "1.19.3", "1.19.4", "1.20", "1.20.1"],
+        12002: ["1.20.2", "1.20.3", "1.20.4"],
+        12005: ["1.20.5"],
+][mcVersion]
+
+// TODO(addingVersion):
+//  For snapshots, this will overwrite mcReleaseVersions
+def cfSnapshots = [
+][mcVersion]
+def mrSnapshots = [
+][mcVersion]
+
+publishMods {
+    file = remapJar.archiveFile
+    displayName = "[${isFabric ? "FABRIC" : (isNeo ? "NEOFORGE" : "FORGE")} MC${mcReleaseVersions[0] + (mcReleaseVersions.size() > 1 ? "+" : "")}] v${project.mod_version}-BETA"
+    changelog = _env["CHANGELOG"] ?: project.default_changelog
+    version = project.version as String
+    if (isFabric) {
+        modLoaders.add("fabric")
+        modLoaders.add("quilt")
+    } else {
+    	if (!isNeo || (isNeo && mcVersion < 12002))  // NeoForge drop compat in MC1.20.2
+            modLoaders.add("forge")
+        if (isNeo)
+            modLoaders.add("neoforge")
+    }
+
+    type = BETA
+
+    def cToken = _env["CURSEFORGE"]
+    if (cToken != null)
+        curseforge {
+            accessToken = cToken
+            projectId = project["curseforge_project"]
+
+            def mcVersions = cfSnapshots == null ? mcReleaseVersions : cfSnapshots
+            for (final def mcVer in mcVersions) {
+                minecraftVersions.add(mcVer)
+            }
+        }
+
+    def mToken = _env["MODRINTH"]
+    if (mToken != null)
+        modrinth {
+            accessToken = mToken
+            projectId = project["modrinth_project"]
+
+            def mcVersions = mrSnapshots == null ? mcReleaseVersions : mrSnapshots
+            for (final def mcVer in mcVersions) {
+                minecraftVersions.add(mcVer)
+            }
+        }
+}
