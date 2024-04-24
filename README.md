@@ -2,7 +2,16 @@
 
 Template for MC mods using ReplayMod's preprocessor
 
-Recommended to be changed:
+## Features
+- CI/CD with caching
+- Uses ArchLoom for multi loader support
+- Uses MojMap by default
+- Gradle setup for multi version and multi loader mod
+
+## Recommendations
+
+### Changes
+These changes is highly recommended:
 - The namespace, the mod name and the mod id:
   - `src/java/...`
   - Filename of `src/main/resources/examplemod.mixins.json`
@@ -22,6 +31,9 @@ Recommended to be changed:
 - `curseforge_project` in `gradle.properties`
 - Anything marked with `TODO(addingVersion)` in `build.gradle`
 - Version list in `versions/`
+
+### Usage
+- Versions in `versions/` directory should be formatted as such: `<mcversion>-<modloader>`, e.g. `1.20.5-fabric`
 
 ## License
 
