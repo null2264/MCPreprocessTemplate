@@ -16,7 +16,7 @@ pluginManagement {
     }
 }
 
-rootProject.name = rootProject.mod_name
+rootProject.name = providers.gradleProperty("mod_name")
 rootProject.buildFileName = "root.gradle.kts"
 
 listOf(
