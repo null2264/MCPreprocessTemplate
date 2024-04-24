@@ -16,7 +16,7 @@ description = "Description for ExampleMod"
 config = "examplemod.mixins.json"
 
 [[dependencies.examplemod]]
-modId = "${forge}"
+modId = "neoforge"
 mandatory = true
 versionRange = "[1,)"
 ordering = "NONE"

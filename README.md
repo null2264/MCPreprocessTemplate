@@ -18,6 +18,7 @@ These changes is highly recommended:
   - Mod ID and/or Mod Name in:
     - `src/main/resources/fabric.mod.json`
     - `src/main/resources/META-INF/mods.toml`
+    - `src/main/resources/META-INF/neoforge.mods.toml` (MC1.20.5 or newer)
     - `src/main/resources/pack.mcmeta`
     - `gradle.properties`
     - `src/java/**/*.java`
