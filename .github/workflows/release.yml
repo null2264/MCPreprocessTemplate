@@ -10,7 +10,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Setup Gradle
-      uses: null2264/actions/gradle-setup@c84b8749f02ff247efa811cbab81a29727632b3e
+      uses: null2264/actions/gradle-setup@c40b491599354b6549692da7a8db036cd013ea57
       with:
         java: 21
 
@@ -20,7 +20,7 @@ jobs:
         echo "versions=$(ls versions | grep -e '.\.' | tr '\n' ' ')" >> $GITHUB_OUTPUT
 
     - name: Build with Gradle
-      uses: null2264/actions/replaymod-preprocessor-compile@c84b8749f02ff247efa811cbab81a29727632b3e
+      uses: null2264/actions/replaymod-preprocessor-compile@c40b491599354b6549692da7a8db036cd013ea57
       with:
         versions: ${{ steps.get-mod-versions.outputs.versions }}
         daemon: n
