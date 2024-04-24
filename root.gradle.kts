@@ -22,5 +22,4 @@ preprocess {
     // quilt12002.link(fabric12002)
 
     fabric12005.link(fabric12002)
-    fabric12002.link(fabric11800)
 }
