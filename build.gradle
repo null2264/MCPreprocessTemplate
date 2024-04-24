@@ -13,6 +13,8 @@ def isForge = project.name.endsWith("forge")
 def isNeo = project.name.endsWith("neoforge")
 def isLex = isForge && !isNeo
 def isFabric = project.name.endsWith("fabric")
+def isQuilt = project.name.endsWith("quilt")
+def isFabricLike = isFabric || isQuilt
 
 def mcVersion
 def (major, minor, patch) = project.name.tokenize('-')[0].tokenize('.')
@@ -38,7 +40,7 @@ repositories {
 
 preprocess {
     vars.put("MC", mcVersion)
-    vars.put("FABRIC", isFabric ? 1 : 0)
+    vars.put("FABRIC", isFabricLike ? 1 + (isQuilt ? 1 : 0) : 0)
     vars.put("FORGE", isForge ? 1 + (isNeo ? 1 : 0) : 0)
 }
 
